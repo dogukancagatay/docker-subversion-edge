@@ -1,37 +1,39 @@
-FROM mamohr/centos-java:jre8
+FROM centos:7
+LABEL maintainer="Doğukan Çağatay <dcagatay@gmail.com>"
 
-MAINTAINER Mario Mohr <mohr.mario@gmail.com>
+# ARG FILE="https://ctf.open.collab.net/sf/frs/do/downloadFile/projects.svnedge/frs.svnedge.5_2_4/frs23789?dl=1"
+ARG FILE="https://ctf.open.collab.net/sf/frs/do/downloadFile/projects.svnedge/frs.svnedge.6_0_0/frs24199?dl=1"
 
-RUN \
-  yum update -y && \
-  yum install -y epel-release && \
-  yum install -y net-tools python-setuptools hostname inotify-tools yum-utils && \
-  yum clean all && \
-  easy_install supervisor
+ENV PUID "3343"
+ENV PGID "3343"
+ENV JAVA_HOME "/usr/lib/jvm/jre"
+ENV RUN_AS_USER "collabnet"
 
-ENV FILE https://downloads-guests.open.collab.net/files/documents/61/17071/CollabNetSubversionEdge-5.2.0_linux-x86_64.tar.gz
+RUN yum install -y epel-release \
+    && yum install -y \
+      java-1.8.0-openjdk-headless \
+      supervisor \
+      sudo \
+      wget \
+    && yum clean all
 
 RUN wget -q ${FILE} -O /tmp/csvn.tgz && \
     mkdir -p /opt/csvn && \
     tar -xzf /tmp/csvn.tgz -C /opt/csvn --strip=1 && \
     rm -rf /tmp/csvn.tgz
 
-ENV RUN_AS_USER collabnet
-
-
-RUN useradd collabnet && \
+RUN groupadd -g ${PGID} collabnet && \
+    useradd -u ${PUID} -g ${PGID} collabnet && \
     chown -R collabnet.collabnet /opt/csvn && \
     cd /opt/csvn && \
     ./bin/csvn install && \
     mkdir -p ./data-initial && \
     cp -r ./data/* ./data-initial
 
-EXPOSE 3343 4434 18080
-
 ADD files /
 
+EXPOSE 3343 4434 18080
 VOLUME /opt/csvn/data
 
 WORKDIR /opt/csvn
-
 ENTRYPOINT ["/config/bootstrap.sh"]

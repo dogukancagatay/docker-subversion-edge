@@ -6,6 +6,9 @@ set -u
 # Supervisord default params
 SUPERVISOR_PARAMS='-c /etc/supervisord.conf'
 
+# Change collabnet user UID and GID
+usermod -u "$PGID" collabnet
+groupmod -g "$PGID" collabnet
 
 # Create directories for supervisor's UNIX socket and logs (which might be missing
 # as container might start with /data mounted from another data-container).
